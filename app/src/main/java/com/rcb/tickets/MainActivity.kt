@@ -1,8 +1,11 @@
 package com.rcb.tickets
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,16 +19,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: EventAdapter
 
+    private val loginLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            updateLoginState()
+            fetchEvents()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupRecyclerView()
-
-        binding.swipeRefresh.setColorSchemeColors(0xFFCC0000.toInt())
-        binding.swipeRefresh.setOnRefreshListener { fetchEvents() }
-
+        setupClickListeners()
+        updateLoginState()
         fetchEvents()
     }
 
@@ -35,13 +45,50 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerView.adapter = adapter
     }
 
+    private fun setupClickListeners() {
+        binding.swipeRefresh.setColorSchemeColors(0xFFCC0000.toInt())
+        binding.swipeRefresh.setOnRefreshListener { fetchEvents() }
+
+        binding.btnLogin.setOnClickListener {
+            val token = LoginActivity.getToken(this)
+            if (token != null) {
+                LoginActivity.clearToken(this)
+                updateLoginState()
+                fetchEvents()
+                Toast.makeText(this, "Logged out", Toast.LENGTH_SHORT).show()
+            } else {
+                loginLauncher.launch(Intent(this, LoginActivity::class.java))
+            }
+        }
+    }
+
+    private fun updateLoginState() {
+        val token = LoginActivity.getToken(this)
+        if (token != null) {
+            binding.btnLogin.text = "Logout"
+            binding.btnLogin.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(0xFF444444.toInt())
+            binding.tvTokenStatus.text = "Logged in"
+            binding.tvTokenStatus.setTextColor(0xFF00CC66.toInt())
+        } else {
+            binding.btnLogin.text = "Login"
+            binding.btnLogin.backgroundTintList =
+                android.content.res.ColorStateList.valueOf(0xFFCC0000.toInt())
+            binding.tvTokenStatus.text = "Not logged in"
+            binding.tvTokenStatus.setTextColor(0xFFAAAAAA.toInt())
+        }
+    }
+
     private fun fetchEvents() {
+        val token = LoginActivity.getToken(this)
+        val authHeader = token?.let { "Bearer $it" }
+
         setLoading(true)
         binding.tvStatus.text = "Loading events..."
 
         lifecycleScope.launch {
             try {
-                val response = RetrofitClient.apiService.getEventList()
+                val response = RetrofitClient.apiService.getEventList(authHeader)
 
                 if (response.isSuccessful) {
                     val events = response.body()?.result
@@ -54,12 +101,14 @@ class MainActivity : AppCompatActivity() {
                     }
                 } else {
                     binding.tvStatus.text = "Failed to load  •  HTTP ${response.code()}"
-                    Toast.makeText(this@MainActivity, "HTTP ${response.code()}", Toast.LENGTH_SHORT).show()
+                    if (response.code() == 401) {
+                        LoginActivity.clearToken(this@MainActivity)
+                        updateLoginState()
+                        Toast.makeText(this@MainActivity, "Session expired. Please login again.", Toast.LENGTH_LONG).show()
+                    }
                 }
-
             } catch (e: Exception) {
                 binding.tvStatus.text = "No internet connection"
-                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             } finally {
                 setLoading(false)
             }

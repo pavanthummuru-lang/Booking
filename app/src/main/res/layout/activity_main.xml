@@ -12,7 +12,7 @@
         android:background="#CC0000"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="14dp"
+        android:paddingVertical="10dp"
         android:gravity="center_vertical">
 
         <TextView
@@ -29,20 +29,49 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:visibility="gone"
-            android:indeterminateTint="#FFFFFF" />
+            android:indeterminateTint="#FFFFFF"
+            android:layout_marginEnd="10dp" />
+
+        <Button
+            android:id="@+id/btnLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="Login"
+            android:backgroundTint="#CC0000"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:paddingHorizontal="14dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp" />
     </LinearLayout>
 
     <!-- Status bar -->
-    <TextView
-        android:id="@+id/tvStatus"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#111111"
+        android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:text="Loading events..."
-        android:textColor="#AAAAAA"
-        android:textSize="12sp"
-        android:background="#111111" />
+        android:paddingVertical="6dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Loading events..."
+            android:textColor="#AAAAAA"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/tvTokenStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Not logged in"
+            android:textColor="#AAAAAA"
+            android:textSize="11sp" />
+    </LinearLayout>
 
     <!-- Events list with pull-to-refresh -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
