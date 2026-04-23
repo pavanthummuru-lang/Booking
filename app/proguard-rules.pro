@@ -1,0 +1,5 @@
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class com.rcb.tickets.model.** { *; }
+-keep class retrofit2.** { *; }
+-keep class okhttp3.** { *; }
